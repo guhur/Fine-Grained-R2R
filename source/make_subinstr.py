@@ -1,5 +1,6 @@
 # # Copyright 2020, Yicong Hong <yicong.hong@anu.edu.au>. All rights reserved.
 
+import argparse
 import json
 import copy
 import stanfordnlp
@@ -8,13 +9,19 @@ from collections import Counter
 from utils import Tokenizer, print_progress, check_lemma
 from chunking_function import create_chunk
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    split = 'train' # 'test', 'val_seen', 'val_unseen'
-    source = './R2R-original/R2R_{}.json'.format(split)
-    target = './output_subinstr/FGR2R_{}.json'.format(split)
+    parser = argparse.ArgumentParser("Create a fine-grained R2R dataset")
+    parser.add_argument(
+        "--source", "-s", type=str, default="./R2R-original/R2R_train.json"
+    )
+    parser.add_argument(
+        "--target", "-t", type=str, default="./output_subinstr/FGR2R_train.json"
+    )
 
-    with open(source,'r') as f_:
+    args = parser.parse_args()
+
+    with open(args.source, "r") as f_:
         data = json.load(f_)
 
     nlp = stanfordnlp.Pipeline()
@@ -24,24 +31,25 @@ if __name__ == '__main__':
 
     for idx, item in enumerate(data):
         new_instr = []
-        for instr in item['instructions'][0:3]:
+        for instr in item["instructions"][0:3]:
             doc = nlp(instr)
 
-            ''' break a sentence using the chunking function '''
+            """ break a sentence using the chunking function """
             instr_lemma = create_chunk(doc)
 
             # build the new instruction list with breakdowned sentences
             new_instr.append(instr_lemma)
 
         # merge into the data dictionary
-        new_data[idx]['new_instructions'] = str(new_instr)
-        print_progress(idx + 1, total_length, prefix='Progress:', suffix='Complete', bar_length=50)
+        new_data[idx]["new_instructions"] = str(new_instr)
+        print_progress(
+            idx + 1, total_length, prefix="Progress:", suffix="Complete", bar_length=50
+        )
 
-    with open(target, 'a') as file_:
+    with open(args.target, "a") as file_:
         json.dump(new_data, file_, ensure_ascii=False, indent=4)
 
-
-    ''' individual samples '''
+    """ individual samples """
     # instrs = [
     #     "Head straight until you pass the wall with holes in it the turn left and wait by the glass table with the white chairs. ",
     #     'Facing the three archways go forward and immediately right, go through the rectangular archway and go into the first room on your left, go along the table, and stop at the chairs.',
